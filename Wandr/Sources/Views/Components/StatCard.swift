@@ -7,7 +7,7 @@ struct StatCard: View {
     let icon: String
     let color: Color
 
-    init(title: String, value: String, subtitle: String? = nil, icon: String, color: Color = WandrTheme.accentCyan) {
+    init(title: String, value: String, subtitle: String? = nil, icon: String, color: Color = WandrTheme.accentTeal) {
         self.title = title
         self.value = value
         self.subtitle = subtitle
@@ -17,32 +17,29 @@ struct StatCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: WandrTheme.spacingSM) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(color)
-                Spacer()
-            }
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(color)
 
             Text(value)
                 .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundStyle(WandrTheme.textPrimary)
+                .foregroundStyle(.primary)
+                .contentTransition(.numericText())
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(WandrTheme.textSecondary)
+                    .foregroundStyle(.secondary)
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 10, weight: .regular))
+                        .font(.system(size: 10))
                         .foregroundStyle(WandrTheme.textTertiary)
                 }
             }
         }
-        .padding(WandrTheme.spacingMD)
-        .background(WandrTheme.surfaceSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassCard()
     }
 }
 
@@ -56,9 +53,10 @@ struct MiniStatBadge: View {
             Text(value)
                 .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(color)
+                .contentTransition(.numericText())
             Text(label)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(WandrTheme.textTertiary)
+                .foregroundStyle(.secondary)
                 .textCase(.uppercase)
                 .tracking(0.5)
         }

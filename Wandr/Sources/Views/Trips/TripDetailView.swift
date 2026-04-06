@@ -6,39 +6,27 @@ struct TripDetailView: View {
     @Bindable var trip: Trip
     @State private var showAddStop = false
     @State private var showAddFlight = false
+    @State private var showLinkFlights = false
     @State private var showEditTrip = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: WandrTheme.spacingMD) {
-                // Trip header
                 tripHeader
-
-                // Quick stats
                 tripQuickStats
-
-                // Timeline
                 if !trip.sortedStops.isEmpty {
                     timelineSection
                 }
-
-                // Flights
-                if !trip.sortedFlights.isEmpty {
-                    flightsSection
-                }
-
-                // Notes
+                flightsSection
                 if let notes = trip.notes, !notes.isEmpty {
                     notesSection(notes)
                 }
-
-                // Actions
                 actionsSection
             }
             .padding(.horizontal, WandrTheme.spacingMD)
             .padding(.bottom, 100)
         }
-        .background(WandrTheme.background)
+        .background { WandrTheme.meshBackground() }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -65,7 +53,7 @@ struct TripDetailView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .foregroundStyle(WandrTheme.textSecondary)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
@@ -74,6 +62,9 @@ struct TripDetailView: View {
         }
         .sheet(isPresented: $showAddFlight) {
             AddFlightView(trip: trip)
+        }
+        .sheet(isPresented: $showLinkFlights) {
+            LinkFlightsView(trip: trip)
         }
         .sheet(isPresented: $showEditTrip) {
             EditTripView(trip: trip)
@@ -89,32 +80,30 @@ struct TripDetailView: View {
                     .foregroundStyle(WandrTheme.purposeColor(trip.purpose))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(WandrTheme.purposeColor(trip.purpose).opacity(0.15))
-                    .clipShape(Capsule())
+                    .background(WandrTheme.purposeColor(trip.purpose).opacity(0.15), in: Capsule())
 
                 if trip.isActive {
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(WandrTheme.accentGreen)
+                            .fill(WandrTheme.accentEmerald)
                             .frame(width: 6, height: 6)
                         Text("ACTIVE")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(WandrTheme.accentGreen)
+                            .foregroundStyle(WandrTheme.accentEmerald)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(WandrTheme.accentGreen.opacity(0.15))
-                    .clipShape(Capsule())
+                    .background(WandrTheme.accentEmerald.opacity(0.15), in: Capsule())
                 }
             }
 
             Text(trip.title)
                 .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(WandrTheme.textPrimary)
+                .foregroundStyle(.primary)
 
             HStack(spacing: WandrTheme.spacingSM) {
                 Image(systemName: "calendar")
-                    .foregroundStyle(WandrTheme.accentCyan)
+                    .foregroundStyle(WandrTheme.accentTeal)
                 Text(trip.startDate.shortFormatted)
                 if let end = trip.endDate {
                     Text("–")
@@ -124,7 +113,7 @@ struct TripDetailView: View {
                 }
             }
             .font(.system(size: 14, weight: .medium, design: .monospaced))
-            .foregroundStyle(WandrTheme.textSecondary)
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, WandrTheme.spacingSM)
@@ -133,15 +122,15 @@ struct TripDetailView: View {
     // MARK: - Quick Stats
     private var tripQuickStats: some View {
         HStack {
-            MiniStatBadge(label: "Days", value: "\(trip.durationDays)", color: WandrTheme.accentCyan)
-            Divider().frame(height: 30).background(WandrTheme.surfaceTertiary)
-            MiniStatBadge(label: "Countries", value: "\(trip.countryCount)", color: WandrTheme.accentPurple)
-            Divider().frame(height: 30).background(WandrTheme.surfaceTertiary)
-            MiniStatBadge(label: "Cities", value: "\(trip.cityCount)", color: WandrTheme.accentOrange)
-            Divider().frame(height: 30).background(WandrTheme.surfaceTertiary)
-            MiniStatBadge(label: "Flights", value: "\(trip.flights.count)", color: WandrTheme.accentBlue)
+            MiniStatBadge(label: "Days", value: "\(trip.durationDays)", color: WandrTheme.accentTeal)
+            Divider().frame(height: 30)
+            MiniStatBadge(label: "Countries", value: "\(trip.countryCount)", color: WandrTheme.accentViolet)
+            Divider().frame(height: 30)
+            MiniStatBadge(label: "Cities", value: "\(trip.cityCount)", color: WandrTheme.accentAmber)
+            Divider().frame(height: 30)
+            MiniStatBadge(label: "Flights", value: "\(trip.flights.count)", color: WandrTheme.accentIndigo)
         }
-        .wandrCard()
+        .glassCard()
     }
 
     // MARK: - Timeline
@@ -150,20 +139,30 @@ struct TripDetailView: View {
             HStack {
                 Text("Timeline")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(WandrTheme.textPrimary)
+                    .foregroundStyle(.primary)
                 Spacer()
-                Button {
-                    showAddStop = true
-                } label: {
+                Button { showAddStop = true } label: {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(WandrTheme.accentCyan)
+                        .foregroundStyle(WandrTheme.accentTeal)
                 }
             }
 
             ForEach(Array(trip.sortedStops.enumerated()), id: \.element) { index, stop in
                 TimelineStopRow(stop: stop, isLast: index == trip.sortedStops.count - 1)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            deleteStop(stop)
+                        } label: {
+                            Label("Delete Stop", systemImage: "trash")
+                        }
+                    }
             }
         }
+    }
+
+    private func deleteStop(_ stop: TripStop) {
+        modelContext.delete(stop)
+        try? modelContext.save()
     }
 
     // MARK: - Flights
@@ -172,18 +171,40 @@ struct TripDetailView: View {
             HStack {
                 Text("Flights")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(WandrTheme.textPrimary)
+                    .foregroundStyle(.primary)
                 Spacer()
-                Button {
-                    showAddFlight = true
+                Menu {
+                    Button {
+                        showLinkFlights = true
+                    } label: {
+                        Label("Link Existing Flights", systemImage: "link")
+                    }
+                    Button {
+                        showAddFlight = true
+                    } label: {
+                        Label("Add New Flight", systemImage: "plus")
+                    }
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(WandrTheme.accentCyan)
+                        .foregroundStyle(WandrTheme.accentTeal)
                 }
             }
 
             ForEach(trip.sortedFlights, id: \.self) { flight in
                 FlightCard(flight: flight)
+                    .contextMenu {
+                        Button {
+                            flight.trip = nil
+                            try? modelContext.save()
+                        } label: {
+                            Label("Unlink from Trip", systemImage: "link.badge.plus")
+                        }
+                        Button(role: .destructive) {
+                            modelContext.delete(flight)
+                        } label: {
+                            Label("Delete Flight", systemImage: "trash")
+                        }
+                    }
             }
         }
     }
@@ -193,41 +214,44 @@ struct TripDetailView: View {
         VStack(alignment: .leading, spacing: WandrTheme.spacingSM) {
             Text("Notes")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(WandrTheme.textPrimary)
+                .foregroundStyle(.primary)
 
             Text(notes)
                 .font(.system(size: 14))
-                .foregroundStyle(WandrTheme.textSecondary)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .wandrCard()
+        .glassCard()
     }
 
     // MARK: - Actions
     private var actionsSection: some View {
         VStack(spacing: WandrTheme.spacingSM) {
-            Button {
-                showAddStop = true
-            } label: {
+            Button { showAddStop = true } label: {
                 Label("Add City Stop", systemImage: "building.2.fill")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(WandrTheme.textPrimary)
+                    .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(WandrTheme.surfaceSecondary)
-                    .clipShape(RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
             }
 
-            Button {
-                showAddFlight = true
-            } label: {
-                Label("Add Flight", systemImage: "airplane")
+            Button { showLinkFlights = true } label: {
+                Label("Link Existing Flights", systemImage: "link")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(WandrTheme.textPrimary)
+                    .foregroundStyle(WandrTheme.accentTeal)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(WandrTheme.surfaceSecondary)
-                    .clipShape(RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
+                    .background(WandrTheme.accentTeal.opacity(0.1), in: RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
+            }
+
+            Button { showAddFlight = true } label: {
+                Label("Add New Flight", systemImage: "airplane")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
             }
         }
     }
@@ -242,12 +266,13 @@ struct TimelineStopRow: View {
             // Timeline connector
             VStack(spacing: 0) {
                 Circle()
-                    .fill(WandrTheme.accentCyan)
+                    .fill(WandrTheme.accentTeal)
                     .frame(width: 12, height: 12)
+                    .shadow(color: WandrTheme.accentTeal.opacity(0.4), radius: 4)
 
                 if !isLast {
                     Rectangle()
-                        .fill(WandrTheme.accentCyan.opacity(0.3))
+                        .fill(WandrTheme.accentTeal.opacity(0.25))
                         .frame(width: 2)
                         .frame(maxHeight: .infinity)
                 }
@@ -260,7 +285,7 @@ struct TimelineStopRow: View {
                     if let city = stop.city {
                         Text(city.name)
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(WandrTheme.textPrimary)
+                            .foregroundStyle(.primary)
 
                         if let country = city.country {
                             Text(country.flagEmoji)
@@ -273,7 +298,7 @@ struct TimelineStopRow: View {
                             ForEach(0..<rating, id: \.self) { _ in
                                 Image(systemName: "star.fill")
                                     .font(.system(size: 10))
-                                    .foregroundStyle(WandrTheme.accentOrange)
+                                    .foregroundStyle(WandrTheme.accentAmber)
                             }
                         }
                     }
@@ -283,26 +308,25 @@ struct TimelineStopRow: View {
                     if let arrival = stop.arrivalDate {
                         Text(arrival.dayMonth)
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
-                            .foregroundStyle(WandrTheme.textSecondary)
+                            .foregroundStyle(.secondary)
                     }
                     if let departure = stop.departureDate {
-                        Text("–")
-                            .foregroundStyle(WandrTheme.textTertiary)
+                        Text("–").foregroundStyle(.tertiary)
                         Text(departure.dayMonth)
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
-                            .foregroundStyle(WandrTheme.textSecondary)
+                            .foregroundStyle(.secondary)
                     }
                     if let duration = stop.durationDays {
                         Text("(\(duration)d)")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(WandrTheme.textTertiary)
+                            .foregroundStyle(.tertiary)
                     }
                 }
 
                 if let accommodation = stop.accommodation, !accommodation.isEmpty {
                     Label(accommodation, systemImage: "bed.double.fill")
                         .font(.system(size: 12))
-                        .foregroundStyle(WandrTheme.textTertiary)
+                        .foregroundStyle(.tertiary)
                 }
 
                 if !stop.highlights.isEmpty {
@@ -311,11 +335,10 @@ struct TimelineStopRow: View {
                             ForEach(stop.highlights, id: \.self) { highlight in
                                 Text(highlight)
                                     .font(.system(size: 11, weight: .medium))
-                                    .foregroundStyle(WandrTheme.accentCyan)
+                                    .foregroundStyle(WandrTheme.accentTeal)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(WandrTheme.accentCyan.opacity(0.1))
-                                    .clipShape(Capsule())
+                                    .background(WandrTheme.accentTeal.opacity(0.12), in: Capsule())
                             }
                         }
                     }
@@ -324,14 +347,11 @@ struct TimelineStopRow: View {
                 if let notes = stop.notes, !notes.isEmpty {
                     Text(notes)
                         .font(.system(size: 13))
-                        .foregroundStyle(WandrTheme.textTertiary)
+                        .foregroundStyle(.tertiary)
                         .lineLimit(2)
                 }
             }
-            .padding(.vertical, WandrTheme.spacingSM)
-            .padding(.horizontal, WandrTheme.spacingSM)
-            .background(WandrTheme.surfaceSecondary)
-            .clipShape(RoundedRectangle(cornerRadius: WandrTheme.radiusSM))
+            .glassCardDense()
         }
     }
 }

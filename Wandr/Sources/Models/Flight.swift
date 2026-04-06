@@ -21,6 +21,9 @@ final class Flight {
     var status: FlightStatus
     var notes: String?
     var distanceMiles: Double?
+    var aircraftType: String?
+    var tailNumber: String?
+    var flightyID: String?
 
     var trip: Trip?
 

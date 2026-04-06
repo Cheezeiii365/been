@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @AppStorage("homeAirport") private var homeAirport = ""
@@ -13,12 +14,17 @@ struct SettingsView: View {
     @Query private var cities: [City]
     @Query private var flights: [Flight]
 
-    @State private var showExportAlert = false
     @State private var showResetAlert = false
+    @State private var showFlightyImporter = false
+    @State private var importResult: FlightyImportService.ImportResult?
+    @State private var showImportResult = false
+    @State private var importError: String?
+    @State private var showImportError = false
+    @State private var isImporting = false
 
     var body: some View {
         NavigationStack {
-            List {
+            Form {
                 // Profile section
                 Section {
                     HStack(spacing: WandrTheme.spacingMD) {
@@ -34,13 +40,12 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Traveler")
                                 .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(WandrTheme.textPrimary)
+                                .foregroundStyle(.primary)
                             Text("\(countries.filter { $0.isVisited }.count) countries, \(cities.filter { $0.isVisited }.count) cities")
                                 .font(.system(size: 13))
-                                .foregroundStyle(WandrTheme.textSecondary)
+                                .foregroundStyle(.secondary)
                         }
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
                 }
 
                 // Preferences
@@ -53,12 +58,10 @@ struct SettingsView: View {
                             .multilineTextAlignment(.trailing)
                             .frame(maxWidth: 100)
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
 
                     Toggle(isOn: $countLayovers) {
                         Label("Count Layovers as Visited", systemImage: "airplane.circle")
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
 
                     Picker(selection: $distanceUnit) {
                         Text("Miles").tag("miles")
@@ -66,7 +69,6 @@ struct SettingsView: View {
                     } label: {
                         Label("Distance Unit", systemImage: "ruler")
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
                 }
 
                 // Map Settings
@@ -76,10 +78,34 @@ struct SettingsView: View {
                             Label("Show Disputed Borders", systemImage: "map")
                             Text("Display disputed territory borders on the map")
                                 .font(.system(size: 12))
-                                .foregroundStyle(WandrTheme.textTertiary)
+                                .foregroundStyle(.tertiary)
                         }
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
+                }
+
+                // Import
+                Section("Import") {
+                    Button {
+                        showFlightyImporter = true
+                    } label: {
+                        HStack {
+                            Label("Import from Flighty", systemImage: "airplane.circle.fill")
+                                .foregroundStyle(WandrTheme.accentTeal)
+                            Spacer()
+                            if isImporting {
+                                ProgressView()
+                                    .tint(WandrTheme.accentTeal)
+                            } else {
+                                Image(systemName: "square.and.arrow.down")
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                    .disabled(isImporting)
+
+                    Text("Export your flights from Flighty as CSV, then import here.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.tertiary)
                 }
 
                 // Data
@@ -88,33 +114,29 @@ struct SettingsView: View {
                         Label("Trips", systemImage: "suitcase.fill")
                         Spacer()
                         Text("\(trips.count)")
-                            .foregroundStyle(WandrTheme.textSecondary)
+                            .foregroundStyle(.secondary)
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
 
                     HStack {
                         Label("Flights", systemImage: "airplane")
                         Spacer()
                         Text("\(flights.count)")
-                            .foregroundStyle(WandrTheme.textSecondary)
+                            .foregroundStyle(.secondary)
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
 
                     HStack {
                         Label("Countries Visited", systemImage: "flag.fill")
                         Spacer()
                         Text("\(countries.filter { $0.isVisited }.count)")
-                            .foregroundStyle(WandrTheme.textSecondary)
+                            .foregroundStyle(.secondary)
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
 
                     HStack {
                         Label("Cities Visited", systemImage: "building.2.fill")
                         Spacer()
                         Text("\(cities.filter { $0.isVisited }.count)")
-                            .foregroundStyle(WandrTheme.textSecondary)
+                            .foregroundStyle(.secondary)
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
                 }
 
                 // About
@@ -122,14 +144,12 @@ struct SettingsView: View {
                     HStack {
                         Label("Version", systemImage: "info.circle")
                         Spacer()
-                        Text("1.0.0")
-                            .foregroundStyle(WandrTheme.textTertiary)
+                        Text("2.0.0")
+                            .foregroundStyle(.tertiary)
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
 
                     Label("Rate Wandr", systemImage: "star.fill")
-                        .foregroundStyle(WandrTheme.accentOrange)
-                        .listRowBackground(WandrTheme.surfaceSecondary)
+                        .foregroundStyle(WandrTheme.accentAmber)
                 }
 
                 // Danger zone
@@ -140,12 +160,35 @@ struct SettingsView: View {
                         Label("Reset All Data", systemImage: "trash")
                             .foregroundStyle(WandrTheme.accentRed)
                     }
-                    .listRowBackground(WandrTheme.surfaceSecondary)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(WandrTheme.background)
             .navigationTitle("Settings")
+            .fileImporter(
+                isPresented: $showFlightyImporter,
+                allowedContentTypes: [UTType.commaSeparatedText, UTType.plainText],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else { return }
+                    importFlightyCSV(url: url)
+                case .failure(let error):
+                    importError = error.localizedDescription
+                    showImportError = true
+                }
+            }
+            .alert("Import Complete", isPresented: $showImportResult) {
+                Button("OK") {}
+            } message: {
+                if let r = importResult {
+                    Text("\(r.imported) flights imported, \(r.skipped) duplicates skipped.\(r.errors.isEmpty ? "" : "\n\(r.errors.count) rows had errors.")")
+                }
+            }
+            .alert("Import Failed", isPresented: $showImportError) {
+                Button("OK") {}
+            } message: {
+                Text(importError ?? "Unknown error")
+            }
             .alert("Reset All Data?", isPresented: $showResetAlert) {
                 Button("Cancel", role: .cancel) {}
                 Button("Reset", role: .destructive) {
@@ -154,6 +197,20 @@ struct SettingsView: View {
             } message: {
                 Text("This will permanently delete all your trips, flights, and travel data. This cannot be undone.")
             }
+        }
+    }
+
+    private func importFlightyCSV(url: URL) {
+        isImporting = true
+        do {
+            let result = try FlightyImportService.parseCSV(from: url, modelContext: modelContext)
+            isImporting = false
+            importResult = result
+            showImportResult = true
+        } catch {
+            isImporting = false
+            importError = error.localizedDescription
+            showImportError = true
         }
     }
 

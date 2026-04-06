@@ -5,68 +5,66 @@ struct FlightCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Airline and flight number
+            // Airline + cabin badge
             HStack {
                 if let airline = flight.airline {
                     Text(airline)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(WandrTheme.textTertiary)
+                        .foregroundStyle(.tertiary)
                 }
                 if let number = flight.flightNumber {
                     Text(number)
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundStyle(WandrTheme.textSecondary)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text(flight.cabinClass.shortName)
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .foregroundStyle(WandrTheme.accentCyan)
+                    .foregroundStyle(WandrTheme.accentTeal)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(WandrTheme.accentCyan.opacity(0.15))
-                    .clipShape(Capsule())
+                    .background(WandrTheme.accentTeal.opacity(0.15), in: Capsule())
             }
             .padding(.bottom, WandrTheme.spacingSM)
 
-            // Route visualization (Flighty-style)
+            // Route visualization
             HStack(alignment: .center, spacing: 0) {
                 // Departure
                 VStack(alignment: .leading, spacing: 4) {
                     Text(flight.departureAirportCode)
                         .font(.system(size: 24, weight: .bold, design: .monospaced))
-                        .foregroundStyle(WandrTheme.textPrimary)
+                        .foregroundStyle(.primary)
                     if let time = flight.departureTime {
                         Text(time.timeFormatted)
                             .font(.system(size: 13, weight: .medium, design: .monospaced))
-                            .foregroundStyle(WandrTheme.textSecondary)
+                            .foregroundStyle(.secondary)
                     }
                     if let name = flight.departureAirportName {
                         Text(name)
                             .font(.system(size: 10))
-                            .foregroundStyle(WandrTheme.textTertiary)
+                            .foregroundStyle(.tertiary)
                             .lineLimit(1)
                     }
                 }
 
                 Spacer()
 
-                // Flight path visualization
+                // Flight path
                 VStack(spacing: 4) {
                     HStack(spacing: 4) {
                         Rectangle()
-                            .fill(WandrTheme.accentCyan.opacity(0.3))
+                            .fill(WandrTheme.accentTeal.opacity(0.4))
                             .frame(height: 1)
                         Image(systemName: "airplane")
                             .font(.system(size: 14))
-                            .foregroundStyle(WandrTheme.accentCyan)
-                            .rotationEffect(.degrees(0))
+                            .foregroundStyle(WandrTheme.accentTeal)
                         Rectangle()
-                            .fill(WandrTheme.accentCyan.opacity(0.3))
+                            .fill(WandrTheme.accentTeal.opacity(0.4))
                             .frame(height: 1)
                     }
                     Text(flight.durationDescription)
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
-                        .foregroundStyle(WandrTheme.textTertiary)
+                        .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -76,42 +74,48 @@ struct FlightCard: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(flight.arrivalAirportCode)
                         .font(.system(size: 24, weight: .bold, design: .monospaced))
-                        .foregroundStyle(WandrTheme.textPrimary)
+                        .foregroundStyle(.primary)
                     if let time = flight.arrivalTime {
                         Text(time.timeFormatted)
                             .font(.system(size: 13, weight: .medium, design: .monospaced))
-                            .foregroundStyle(WandrTheme.textSecondary)
+                            .foregroundStyle(.secondary)
                     }
                     if let name = flight.arrivalAirportName {
                         Text(name)
                             .font(.system(size: 10))
-                            .foregroundStyle(WandrTheme.textTertiary)
+                            .foregroundStyle(.tertiary)
                             .lineLimit(1)
                     }
                 }
             }
 
-            // Date and status
+            // Date + status footer
             if let departureTime = flight.departureTime {
                 Divider()
-                    .background(WandrTheme.surfaceTertiary)
                     .padding(.vertical, WandrTheme.spacingSM)
 
                 HStack {
                     Text(departureTime.shortFormatted)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(WandrTheme.textTertiary)
+                        .foregroundStyle(.tertiary)
 
                     Spacer()
 
                     Label(flight.status.rawValue, systemImage: flight.status.icon)
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(flight.status == .completed ? WandrTheme.accentGreen : WandrTheme.textSecondary)
+                        .foregroundStyle(statusColor)
                 }
             }
         }
-        .padding(WandrTheme.spacingMD)
-        .background(WandrTheme.surfaceSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
+        .glassCard()
+    }
+
+    private var statusColor: Color {
+        switch flight.status {
+        case .completed: return WandrTheme.accentEmerald
+        case .cancelled: return WandrTheme.accentRed
+        case .delayed: return WandrTheme.accentAmber
+        case .scheduled: return .secondary
+        }
     }
 }

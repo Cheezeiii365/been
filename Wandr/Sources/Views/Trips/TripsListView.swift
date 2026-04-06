@@ -27,18 +27,15 @@ struct TripsListView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: WandrTheme.spacingMD) {
-                    // Filters
                     filtersSection
 
-                    // Trip count
                     HStack {
                         Text("\(filteredTrips.count) trips")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(WandrTheme.textTertiary)
+                            .foregroundStyle(.tertiary)
                         Spacer()
                     }
 
-                    // Trips list
                     if filteredTrips.isEmpty {
                         emptyState
                     } else {
@@ -53,16 +50,14 @@ struct TripsListView: View {
                 .padding(.horizontal, WandrTheme.spacingMD)
                 .padding(.bottom, 100)
             }
-            .background(WandrTheme.background)
+            .background { WandrTheme.meshBackground() }
             .navigationTitle("Trips")
             .searchable(text: $searchText, prompt: "Search trips...")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddTrip = true
-                    } label: {
+                    Button { showAddTrip = true } label: {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(WandrTheme.accentCyan)
+                            .foregroundStyle(WandrTheme.accentTeal)
                             .font(.system(size: 22))
                     }
                 }
@@ -76,20 +71,17 @@ struct TripsListView: View {
     private var filtersSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: WandrTheme.spacingSM) {
-                // Year filter
                 Menu {
                     Button("All Years") { filterYear = nil }
                     ForEach(availableYears, id: \.self) { year in
                         Button("\(year)") { filterYear = year }
                     }
                 } label: {
-                    filterPill(
-                        text: filterYear != nil ? "\(filterYear!)" : "Year",
-                        isActive: filterYear != nil
-                    )
+                    Text(filterYear != nil ? "\(filterYear!)" : "Year")
+                        .foregroundStyle(filterYear != nil ? .white : .secondary)
+                        .glassPill(isActive: filterYear != nil)
                 }
 
-                // Purpose filter
                 Menu {
                     Button("All Types") { filterPurpose = nil }
                     ForEach(TripPurpose.allCases) { purpose in
@@ -100,10 +92,9 @@ struct TripsListView: View {
                         }
                     }
                 } label: {
-                    filterPill(
-                        text: filterPurpose?.rawValue ?? "Type",
-                        isActive: filterPurpose != nil
-                    )
+                    Text(filterPurpose?.rawValue ?? "Type")
+                        .foregroundStyle(filterPurpose != nil ? .white : .secondary)
+                        .glassPill(isActive: filterPurpose != nil)
                 }
 
                 if filterYear != nil || filterPurpose != nil {
@@ -120,29 +111,19 @@ struct TripsListView: View {
         }
     }
 
-    private func filterPill(text: String, isActive: Bool) -> some View {
-        Text(text)
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(isActive ? WandrTheme.background : WandrTheme.textSecondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(isActive ? WandrTheme.accentCyan : WandrTheme.surfaceSecondary)
-            .clipShape(Capsule())
-    }
-
     private var emptyState: some View {
         VStack(spacing: WandrTheme.spacingMD) {
             Image(systemName: "suitcase")
                 .font(.system(size: 48))
-                .foregroundStyle(WandrTheme.textTertiary)
+                .foregroundStyle(.tertiary)
 
             Text("No trips yet")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(WandrTheme.textPrimary)
+                .foregroundStyle(.primary)
 
             Text("Tap + to log your first trip")
                 .font(.system(size: 14))
-                .foregroundStyle(WandrTheme.textTertiary)
+                .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)

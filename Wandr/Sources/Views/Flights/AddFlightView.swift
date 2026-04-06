@@ -21,9 +21,6 @@ struct AddFlightView: View {
     @State private var bookingRef = ""
     @State private var notes = ""
 
-    @State private var showDepartureResults = false
-    @State private var showArrivalResults = false
-
     var departureResults: [Airport] {
         guard departureSearch.count >= 2 else { return [] }
         return AirportDatabase.search(departureSearch)
@@ -38,11 +35,10 @@ struct AddFlightView: View {
         NavigationStack {
             Form {
                 Section("Route") {
-                    // Departure airport
                     VStack(alignment: .leading) {
                         HStack {
                             Image(systemName: "airplane.departure")
-                                .foregroundStyle(WandrTheme.accentCyan)
+                                .foregroundStyle(WandrTheme.accentTeal)
                             if let dep = selectedDeparture {
                                 Text("\(dep.code) – \(dep.city)")
                                     .font(.system(size: 15, weight: .semibold))
@@ -52,7 +48,7 @@ struct AddFlightView: View {
                                     departureSearch = ""
                                 }
                                 .font(.system(size: 12))
-                                .foregroundStyle(WandrTheme.accentCyan)
+                                .foregroundStyle(WandrTheme.accentTeal)
                             } else {
                                 TextField("From (airport code or city)", text: $departureSearch)
                                     .textInputAutocapitalization(.characters)
@@ -68,10 +64,10 @@ struct AddFlightView: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(airport.shortDisplayName)
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundStyle(WandrTheme.textPrimary)
+                                            .foregroundStyle(.primary)
                                         Text(airport.name)
                                             .font(.system(size: 11))
-                                            .foregroundStyle(WandrTheme.textTertiary)
+                                            .foregroundStyle(.tertiary)
                                     }
                                     .padding(.vertical, 4)
                                 }
@@ -79,11 +75,10 @@ struct AddFlightView: View {
                         }
                     }
 
-                    // Arrival airport
                     VStack(alignment: .leading) {
                         HStack {
                             Image(systemName: "airplane.arrival")
-                                .foregroundStyle(WandrTheme.accentPurple)
+                                .foregroundStyle(WandrTheme.accentViolet)
                             if let arr = selectedArrival {
                                 Text("\(arr.code) – \(arr.city)")
                                     .font(.system(size: 15, weight: .semibold))
@@ -93,7 +88,7 @@ struct AddFlightView: View {
                                     arrivalSearch = ""
                                 }
                                 .font(.system(size: 12))
-                                .foregroundStyle(WandrTheme.accentCyan)
+                                .foregroundStyle(WandrTheme.accentTeal)
                             } else {
                                 TextField("To (airport code or city)", text: $arrivalSearch)
                                     .textInputAutocapitalization(.characters)
@@ -109,10 +104,10 @@ struct AddFlightView: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(airport.shortDisplayName)
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundStyle(WandrTheme.textPrimary)
+                                            .foregroundStyle(.primary)
                                         Text(airport.name)
                                             .font(.system(size: 11))
-                                            .foregroundStyle(WandrTheme.textTertiary)
+                                            .foregroundStyle(.tertiary)
                                     }
                                     .padding(.vertical, 4)
                                 }
@@ -152,8 +147,6 @@ struct AddFlightView: View {
                         .lineLimit(2...4)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(WandrTheme.background)
             .navigationTitle("Add Flight")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -161,12 +154,10 @@ struct AddFlightView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveFlight()
-                    }
-                    .disabled(selectedDeparture == nil || selectedArrival == nil)
-                    .foregroundStyle(selectedDeparture != nil && selectedArrival != nil ? WandrTheme.accentCyan : WandrTheme.textTertiary)
-                    .fontWeight(.bold)
+                    Button("Save") { saveFlight() }
+                        .disabled(selectedDeparture == nil || selectedArrival == nil)
+                        .foregroundStyle(selectedDeparture != nil && selectedArrival != nil ? WandrTheme.accentTeal : Color.gray)
+                        .fontWeight(.bold)
                 }
             }
         }

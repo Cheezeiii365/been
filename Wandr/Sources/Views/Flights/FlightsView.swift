@@ -24,13 +24,9 @@ struct FlightsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: WandrTheme.spacingMD) {
-                    // Flight summary strip
                     flightSummary
-
-                    // Status filter
                     statusFilter
 
-                    // Flights list
                     if filteredFlights.isEmpty {
                         emptyState
                     } else {
@@ -49,15 +45,13 @@ struct FlightsView: View {
                 .padding(.horizontal, WandrTheme.spacingMD)
                 .padding(.bottom, 100)
             }
-            .background(WandrTheme.background)
+            .background { WandrTheme.meshBackground() }
             .navigationTitle("Flights")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddFlight = true
-                    } label: {
+                    Button { showAddFlight = true } label: {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(WandrTheme.accentCyan)
+                            .foregroundStyle(WandrTheme.accentTeal)
                             .font(.system(size: 22))
                     }
                 }
@@ -71,42 +65,30 @@ struct FlightsView: View {
     // MARK: - Summary
     private var flightSummary: some View {
         HStack {
-            MiniStatBadge(label: "Total", value: "\(flights.count)", color: WandrTheme.accentBlue)
-            Divider().frame(height: 30).background(WandrTheme.surfaceTertiary)
-            MiniStatBadge(label: "Upcoming", value: "\(upcomingFlights.count)", color: WandrTheme.accentOrange)
-            Divider().frame(height: 30).background(WandrTheme.surfaceTertiary)
-            MiniStatBadge(label: "Completed", value: "\(completedFlights.count)", color: WandrTheme.accentGreen)
+            MiniStatBadge(label: "Total", value: "\(flights.count)", color: WandrTheme.accentIndigo)
+            Divider().frame(height: 30)
+            MiniStatBadge(label: "Upcoming", value: "\(upcomingFlights.count)", color: WandrTheme.accentAmber)
+            Divider().frame(height: 30)
+            MiniStatBadge(label: "Completed", value: "\(completedFlights.count)", color: WandrTheme.accentEmerald)
         }
-        .wandrCard()
+        .glassCard()
     }
 
     // MARK: - Status Filter
     private var statusFilter: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: WandrTheme.spacingSM) {
-                Button {
-                    filterStatus = nil
-                } label: {
+                Button { filterStatus = nil } label: {
                     Text("All")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(filterStatus == nil ? WandrTheme.background : WandrTheme.textSecondary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(filterStatus == nil ? WandrTheme.accentCyan : WandrTheme.surfaceSecondary)
-                        .clipShape(Capsule())
+                        .foregroundStyle(filterStatus == nil ? .white : .secondary)
+                        .glassPill(isActive: filterStatus == nil)
                 }
 
                 ForEach(FlightStatus.allCases) { status in
-                    Button {
-                        filterStatus = status
-                    } label: {
+                    Button { filterStatus = status } label: {
                         Label(status.rawValue, systemImage: status.icon)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(filterStatus == status ? WandrTheme.background : WandrTheme.textSecondary)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(filterStatus == status ? WandrTheme.accentCyan : WandrTheme.surfaceSecondary)
-                            .clipShape(Capsule())
+                            .foregroundStyle(filterStatus == status ? .white : .secondary)
+                            .glassPill(isActive: filterStatus == status)
                     }
                 }
             }
@@ -117,15 +99,15 @@ struct FlightsView: View {
         VStack(spacing: WandrTheme.spacingMD) {
             Image(systemName: "airplane")
                 .font(.system(size: 48))
-                .foregroundStyle(WandrTheme.textTertiary)
+                .foregroundStyle(.tertiary)
 
             Text("No flights logged")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(WandrTheme.textPrimary)
+                .foregroundStyle(.primary)
 
             Text("Tap + to add your first flight")
                 .font(.system(size: 14))
-                .foregroundStyle(WandrTheme.textTertiary)
+                .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)

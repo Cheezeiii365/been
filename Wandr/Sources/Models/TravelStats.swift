@@ -26,7 +26,7 @@ struct TravelStats {
         return Double(totalDaysAbroad) / Double(totalTrips)
     }
 
-    static let empty = TravelStats(
+    nonisolated(unsafe) static let empty = TravelStats(
         totalCountries: 0,
         totalCities: 0,
         totalTrips: 0,

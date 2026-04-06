@@ -5,33 +5,36 @@ struct TripCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: WandrTheme.spacingSM) {
-            // Header with purpose badge
+            // Header: purpose badge + live indicator
             HStack {
                 Label(trip.purpose.rawValue, systemImage: trip.purpose.icon)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(WandrTheme.purposeColor(trip.purpose))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(WandrTheme.purposeColor(trip.purpose).opacity(0.15))
-                    .clipShape(Capsule())
+                    .background(WandrTheme.purposeColor(trip.purpose).opacity(0.15), in: Capsule())
 
                 Spacer()
 
                 if trip.isActive {
-                    Text("LIVE")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(WandrTheme.accentGreen)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(WandrTheme.accentGreen.opacity(0.15))
-                        .clipShape(Capsule())
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(WandrTheme.accentEmerald)
+                            .frame(width: 6, height: 6)
+                        Text("LIVE")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(WandrTheme.accentEmerald)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(WandrTheme.accentEmerald.opacity(0.15), in: Capsule())
                 }
             }
 
             // Title
             Text(trip.title)
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(WandrTheme.textPrimary)
+                .foregroundStyle(.primary)
 
             // Date range
             HStack(spacing: 4) {
@@ -44,36 +47,26 @@ struct TripCard: View {
                 }
             }
             .font(.system(size: 13, weight: .medium, design: .monospaced))
-            .foregroundStyle(WandrTheme.textSecondary)
+            .foregroundStyle(.secondary)
 
-            // Bottom stats row
+            // Stats row
             HStack(spacing: WandrTheme.spacingMD) {
                 if trip.countryCount > 0 {
                     Label("\(trip.countryCount)", systemImage: "flag.fill")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(WandrTheme.textTertiary)
                 }
-
                 if trip.cityCount > 0 {
                     Label("\(trip.cityCount)", systemImage: "building.2.fill")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(WandrTheme.textTertiary)
                 }
-
                 Label("\(trip.durationDays)d", systemImage: "calendar")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(WandrTheme.textTertiary)
-
                 if !trip.flights.isEmpty {
                     Label("\(trip.flights.count)", systemImage: "airplane")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(WandrTheme.textTertiary)
                 }
-
                 Spacer()
             }
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(.tertiary)
 
-            // City timeline dots
+            // City dots
             if !trip.sortedStops.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
@@ -81,11 +74,11 @@ struct TripCard: View {
                             if let city = stop.city {
                                 HStack(spacing: 4) {
                                     Circle()
-                                        .fill(WandrTheme.accentCyan)
-                                        .frame(width: 6, height: 6)
+                                        .fill(WandrTheme.accentTeal)
+                                        .frame(width: 5, height: 5)
                                     Text(city.name)
                                         .font(.system(size: 11, weight: .medium))
-                                        .foregroundStyle(WandrTheme.textSecondary)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
                         }
@@ -93,8 +86,6 @@ struct TripCard: View {
                 }
             }
         }
-        .padding(WandrTheme.spacingMD)
-        .background(WandrTheme.surfaceSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
+        .glassCard()
     }
 }

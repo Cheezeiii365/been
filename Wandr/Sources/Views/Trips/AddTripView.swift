@@ -29,13 +29,10 @@ struct AddTripView: View {
 
                 Section("Dates") {
                     DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
-
                     Toggle("Has End Date", isOn: $hasEndDate)
-
                     if hasEndDate {
                         DatePicker("End Date", selection: $endDate, in: startDate..., displayedComponents: .date)
                     }
-
                     Toggle("Currently Active", isOn: $isActive)
                 }
 
@@ -44,23 +41,18 @@ struct AddTripView: View {
                         .frame(minHeight: 80)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(WandrTheme.background)
             .navigationTitle("New Trip")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(WandrTheme.textSecondary)
+                        .foregroundStyle(.secondary)
                 }
-
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveTrip()
-                    }
-                    .disabled(title.isEmpty)
-                    .foregroundStyle(title.isEmpty ? WandrTheme.textTertiary : WandrTheme.accentCyan)
-                    .fontWeight(.bold)
+                    Button("Save") { saveTrip() }
+                        .disabled(title.isEmpty)
+                        .foregroundStyle(title.isEmpty ? Color.gray : WandrTheme.accentTeal)
+                        .fontWeight(.bold)
                 }
             }
         }
@@ -117,8 +109,6 @@ struct EditTripView: View {
                         .frame(minHeight: 80)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(WandrTheme.background)
             .navigationTitle("Edit Trip")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -135,7 +125,7 @@ struct EditTripView: View {
                         dismiss()
                     }
                     .fontWeight(.bold)
-                    .foregroundStyle(WandrTheme.accentCyan)
+                    .foregroundStyle(WandrTheme.accentTeal)
                 }
             }
             .onAppear {

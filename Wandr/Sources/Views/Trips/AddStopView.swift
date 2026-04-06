@@ -1,15 +1,15 @@
 import SwiftUI
 import SwiftData
+import MapKit
 
 struct AddStopView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Country.name) private var countries: [Country]
 
     let trip: Trip
 
-    @State private var cityName = ""
-    @State private var selectedCountry: Country?
+    @State private var citySearch = CitySearchService()
+    @State private var resolvedCity: ResolvedCity?
     @State private var arrivalDate: Date
     @State private var departureDate: Date
     @State private var hasDeparture = true
@@ -18,7 +18,6 @@ struct AddStopView: View {
     @State private var accommodation = ""
     @State private var highlightText = ""
     @State private var highlights: [String] = []
-    @State private var searchCountryText = ""
 
     init(trip: Trip) {
         self.trip = trip
@@ -27,23 +26,58 @@ struct AddStopView: View {
         _departureDate = State(initialValue: defaultDate)
     }
 
-    var filteredCountries: [Country] {
-        if searchCountryText.isEmpty { return countries }
-        return countries.filter { $0.name.localizedCaseInsensitiveContains(searchCountryText) }
-    }
-
     var body: some View {
         NavigationStack {
             Form {
                 Section("Location") {
-                    TextField("City Name", text: $cityName)
-                        .font(.system(size: 16, weight: .medium))
+                    if let resolved = resolvedCity {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(resolved.name)
+                                    .font(.system(size: 16, weight: .semibold))
+                                Text([resolved.state, resolved.countryName].compactMap { $0 }.joined(separator: ", "))
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button("Change") {
+                                resolvedCity = nil
+                                citySearch.searchText = ""
+                            }
+                            .font(.system(size: 12))
+                            .foregroundStyle(WandrTheme.accentTeal)
+                        }
+                    } else {
+                        TextField("Search city...", text: $citySearch.searchText)
+                            .font(.system(size: 16, weight: .medium))
+                            .autocorrectionDisabled()
 
-                    // Country picker with search
-                    Picker("Country", selection: $selectedCountry) {
-                        Text("Select Country").tag(nil as Country?)
-                        ForEach(countries, id: \.self) { country in
-                            Text("\(country.flagEmoji) \(country.name)").tag(country as Country?)
+                        if citySearch.isSearching {
+                            HStack {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Finding city...")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        ForEach(citySearch.suggestions.prefix(5), id: \.self) { suggestion in
+                            Button {
+                                selectSuggestion(suggestion)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(suggestion.title)
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundStyle(.primary)
+                                    if !suggestion.subtitle.isEmpty {
+                                        Text(suggestion.subtitle)
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                            }
                         }
                     }
                 }
@@ -61,7 +95,7 @@ struct AddStopView: View {
                         ForEach(1...5, id: \.self) { star in
                             Image(systemName: star <= rating ? "star.fill" : "star")
                                 .font(.system(size: 24))
-                                .foregroundStyle(star <= rating ? WandrTheme.accentOrange : WandrTheme.textTertiary)
+                                .foregroundStyle(star <= rating ? WandrTheme.accentAmber : Color.gray)
                                 .onTapGesture {
                                     rating = star == rating ? 0 : star
                                 }
@@ -81,7 +115,7 @@ struct AddStopView: View {
                             }
                         } label: {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundStyle(WandrTheme.accentCyan)
+                                .foregroundStyle(WandrTheme.accentTeal)
                         }
                     }
 
@@ -97,13 +131,12 @@ struct AddStopView: View {
                                         } label: {
                                             Image(systemName: "xmark.circle.fill")
                                                 .font(.system(size: 12))
-                                                .foregroundStyle(WandrTheme.textTertiary)
+                                                .foregroundStyle(.tertiary)
                                         }
                                     }
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(WandrTheme.accentCyan.opacity(0.1))
-                                    .clipShape(Capsule())
+                                    .background(WandrTheme.accentTeal.opacity(0.12), in: Capsule())
                                 }
                             }
                         }
@@ -113,8 +146,6 @@ struct AddStopView: View {
                         .lineLimit(3...6)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(WandrTheme.background)
             .navigationTitle("Add City Stop")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -122,34 +153,48 @@ struct AddStopView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
-                        saveStop()
-                    }
-                    .disabled(cityName.isEmpty || selectedCountry == nil)
-                    .foregroundStyle(cityName.isEmpty ? WandrTheme.textTertiary : WandrTheme.accentCyan)
-                    .fontWeight(.bold)
+                    Button("Add") { saveStop() }
+                        .disabled(resolvedCity == nil)
+                        .foregroundStyle(resolvedCity == nil ? Color.gray : WandrTheme.accentTeal)
+                        .fontWeight(.bold)
                 }
             }
         }
     }
 
-    private func saveStop() {
-        guard let country = selectedCountry else { return }
+    private func selectSuggestion(_ suggestion: MKLocalSearchCompletion) {
+        Task {
+            if let resolved = await citySearch.resolveCity(suggestion) {
+                resolvedCity = resolved
+            }
+        }
+    }
 
-        // Find or create city
-        let cityId = "\(country.code):\(cityName)"
+    private func saveStop() {
+        guard let resolved = resolvedCity else { return }
+
+        let country = findOrCreateCountry(code: resolved.countryCode, name: resolved.countryName)
+
+        let cityId = "\(resolved.countryCode):\(resolved.name)"
         let descriptor = FetchDescriptor<City>(predicate: #Predicate { $0.id == cityId })
         let existingCity = try? modelContext.fetch(descriptor).first
 
         let city: City
         if let existing = existingCity {
             city = existing
+            // Update coordinates if they were previously random
+            city.latitude = resolved.latitude
+            city.longitude = resolved.longitude
+            if let tz = resolved.timeZoneIdentifier { city.timeZoneIdentifier = tz }
+            if let state = resolved.state { city.state = state }
         } else {
             city = City(
-                name: cityName,
-                countryCode: country.code,
-                latitude: country.latitude + Double.random(in: -2...2),
-                longitude: country.longitude + Double.random(in: -2...2)
+                name: resolved.name,
+                countryCode: resolved.countryCode,
+                latitude: resolved.latitude,
+                longitude: resolved.longitude,
+                state: resolved.state,
+                timeZoneIdentifier: resolved.timeZoneIdentifier
             )
             city.country = country
             modelContext.insert(city)
@@ -169,12 +214,37 @@ struct AddStopView: View {
 
         modelContext.insert(stop)
 
-        // Add country to trip if not already there
         if !trip.countries.contains(where: { $0.code == country.code }) {
             trip.countries.append(country)
         }
 
         try? modelContext.save()
         dismiss()
+    }
+
+    private func findOrCreateCountry(code: String, name: String) -> Country {
+        let descriptor = FetchDescriptor<Country>(predicate: #Predicate { $0.code == code })
+        if let existing = try? modelContext.fetch(descriptor).first {
+            return existing
+        }
+
+        // Country not in seeded list — create it
+        let country = Country(
+            code: code,
+            name: name,
+            continent: .europe, // Default; not critical for functionality
+            flagEmoji: flagEmoji(for: code),
+            latitude: 0,
+            longitude: 0
+        )
+        modelContext.insert(country)
+        return country
+    }
+
+    private func flagEmoji(for countryCode: String) -> String {
+        let base: UInt32 = 127397
+        return countryCode.uppercased().unicodeScalars.compactMap {
+            UnicodeScalar(base + $0.value).map { String($0) }
+        }.joined()
     }
 }

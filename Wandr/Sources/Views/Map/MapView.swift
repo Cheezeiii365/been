@@ -25,7 +25,6 @@ struct TravelMapView: View {
         NavigationStack {
             ZStack(alignment: .top) {
                 Map(position: $cameraPosition) {
-                    // City markers
                     if mapFilter != .flights {
                         ForEach(visitedCities, id: \.id) { city in
                             Annotation(city.name, coordinate: CLLocationCoordinate2D(
@@ -41,21 +40,20 @@ struct TravelMapView: View {
                         }
                     }
 
-                    // Flight routes
                     if mapFilter != .cities {
                         ForEach(flights, id: \.self) { flight in
                             MapPolyline(coordinates: [
                                 CLLocationCoordinate2D(latitude: flight.departureLat, longitude: flight.departureLon),
                                 CLLocationCoordinate2D(latitude: flight.arrivalLat, longitude: flight.arrivalLon)
                             ])
-                            .stroke(WandrTheme.accentCyan.opacity(0.6), lineWidth: 2)
+                            .stroke(WandrTheme.accentTeal.opacity(0.6), lineWidth: 2)
                         }
                     }
                 }
                 .mapStyle(.imagery(elevation: .realistic))
                 .ignoresSafeArea(edges: .top)
 
-                // Filter pills
+                // Filter pills — glass
                 VStack {
                     Spacer().frame(height: 60)
                     HStack(spacing: WandrTheme.spacingSM) {
@@ -64,12 +62,8 @@ struct TravelMapView: View {
                                 withAnimation { mapFilter = filter }
                             } label: {
                                 Text(filter.rawValue)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(mapFilter == filter ? WandrTheme.background : WandrTheme.textPrimary)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 8)
-                                    .background(mapFilter == filter ? WandrTheme.accentCyan : WandrTheme.surfaceSecondary.opacity(0.9))
-                                    .clipShape(Capsule())
+                                    .foregroundStyle(mapFilter == filter ? .white : .primary)
+                                    .glassPill(isActive: mapFilter == filter)
                             }
                         }
                         Spacer()
@@ -77,20 +71,19 @@ struct TravelMapView: View {
                     .padding(.horizontal, WandrTheme.spacingMD)
                 }
 
-                // Bottom stats bar
+                // Bottom stats bar — glass
                 VStack {
                     Spacer()
                     HStack {
-                        MiniStatBadge(label: "Countries", value: "\(countries.filter { $0.isVisited }.count)", color: WandrTheme.accentCyan)
-                        Divider().frame(height: 30).background(WandrTheme.surfaceTertiary)
-                        MiniStatBadge(label: "Cities", value: "\(visitedCities.count)", color: WandrTheme.accentPurple)
-                        Divider().frame(height: 30).background(WandrTheme.surfaceTertiary)
-                        MiniStatBadge(label: "Flights", value: "\(flights.count)", color: WandrTheme.accentBlue)
+                        MiniStatBadge(label: "Countries", value: "\(countries.filter { $0.isVisited }.count)", color: WandrTheme.accentTeal)
+                        Divider().frame(height: 30)
+                        MiniStatBadge(label: "Cities", value: "\(visitedCities.count)", color: WandrTheme.accentViolet)
+                        Divider().frame(height: 30)
+                        MiniStatBadge(label: "Flights", value: "\(flights.count)", color: WandrTheme.accentIndigo)
                     }
                     .padding(.vertical, WandrTheme.spacingSM)
                     .padding(.horizontal, WandrTheme.spacingMD)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: WandrTheme.radiusLG))
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: WandrTheme.radiusLG))
                     .padding(.horizontal, WandrTheme.spacingMD)
                     .padding(.bottom, 90)
                 }
@@ -111,17 +104,15 @@ struct CityMapMarker: View {
     let city: City
 
     var body: some View {
-        VStack(spacing: 2) {
-            ZStack {
-                Circle()
-                    .fill(WandrTheme.accentCyan)
-                    .frame(width: 28, height: 28)
-                    .shadow(color: WandrTheme.accentCyan.opacity(0.4), radius: 6)
+        ZStack {
+            Circle()
+                .fill(WandrTheme.accentTeal)
+                .frame(width: 28, height: 28)
+                .shadow(color: WandrTheme.accentTeal.opacity(0.5), radius: 8)
 
-                Image(systemName: "building.2.fill")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.white)
-            }
+            Image(systemName: "building.2.fill")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.white)
         }
     }
 }
@@ -131,84 +122,81 @@ struct CityDetailSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: WandrTheme.spacingMD) {
-            // Header
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(city.name)
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(WandrTheme.textPrimary)
+                        .foregroundStyle(.primary)
 
                     if let country = city.country {
                         HStack(spacing: 4) {
                             Text(country.flagEmoji)
                             Text(country.name)
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(WandrTheme.textSecondary)
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
                 Spacer()
             }
 
-            Divider().background(WandrTheme.surfaceTertiary)
+            Divider()
 
-            // Stats
             HStack(spacing: WandrTheme.spacingLG) {
                 VStack(spacing: 4) {
                     Text("\(city.totalVisits)")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(WandrTheme.accentCyan)
+                        .foregroundStyle(WandrTheme.accentTeal)
                     Text("Visits")
                         .font(.system(size: 12))
-                        .foregroundStyle(WandrTheme.textTertiary)
+                        .foregroundStyle(.tertiary)
                 }
 
                 VStack(spacing: 4) {
                     Text("\(city.totalDaysSpent)")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(WandrTheme.accentPurple)
+                        .foregroundStyle(WandrTheme.accentViolet)
                     Text("Days")
                         .font(.system(size: 12))
-                        .foregroundStyle(WandrTheme.textTertiary)
+                        .foregroundStyle(.tertiary)
                 }
 
                 if let first = city.firstVisited {
                     VStack(spacing: 4) {
                         Text(first.monthYear)
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(WandrTheme.accentOrange)
+                            .foregroundStyle(WandrTheme.accentAmber)
                         Text("First Visit")
                             .font(.system(size: 12))
-                            .foregroundStyle(WandrTheme.textTertiary)
+                            .foregroundStyle(.tertiary)
                     }
                 }
             }
             .frame(maxWidth: .infinity)
 
-            // Trip history
             if !city.tripStops.isEmpty {
                 VStack(alignment: .leading, spacing: WandrTheme.spacingSM) {
                     Text("Trip History")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(WandrTheme.textPrimary)
+                        .foregroundStyle(.primary)
 
                     ForEach(city.tripStops.sorted(by: { ($0.arrivalDate ?? .distantPast) > ($1.arrivalDate ?? .distantPast) }), id: \.self) { stop in
                         HStack {
                             Circle()
-                                .fill(WandrTheme.accentCyan)
+                                .fill(WandrTheme.accentTeal)
                                 .frame(width: 6, height: 6)
 
                             if let arrival = stop.arrivalDate {
                                 Text(arrival.shortFormatted)
                                     .font(.system(size: 13, weight: .medium))
-                                    .foregroundStyle(WandrTheme.textSecondary)
+                                    .foregroundStyle(.secondary)
                             }
 
                             Spacer()
 
                             Text(stop.durationDescription)
                                 .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                .foregroundStyle(WandrTheme.textTertiary)
+                                .foregroundStyle(.tertiary)
                         }
                     }
                 }
@@ -217,6 +205,5 @@ struct CityDetailSheet: View {
             Spacer()
         }
         .padding(WandrTheme.spacingLG)
-        .background(WandrTheme.surfacePrimary)
     }
 }

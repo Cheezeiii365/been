@@ -89,30 +89,30 @@ final class StatsService {
     }
 
     private func fetchTrips(year: Int? = nil) -> [Trip] {
-        var descriptor = FetchDescriptor<Trip>(sortBy: [SortDescriptor(\.startDate, order: .reverse)])
+        let descriptor = FetchDescriptor<Trip>(sortBy: [SortDescriptor(\.startDate, order: .reverse)])
+        var results = (try? modelContext.fetch(descriptor)) ?? []
         if let year = year {
             let calendar = Calendar.current
             let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1))!
             let end = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1))!
-            descriptor.predicate = #Predicate { $0.startDate >= start && $0.startDate < end }
+            results = results.filter { $0.startDate >= start && $0.startDate < end }
         }
-        return (try? modelContext.fetch(descriptor)) ?? []
+        return results
     }
 
     private func fetchFlights(year: Int? = nil) -> [Flight] {
-        var descriptor = FetchDescriptor<Flight>(sortBy: [SortDescriptor(\.departureTime, order: .reverse)])
+        let descriptor = FetchDescriptor<Flight>(sortBy: [SortDescriptor(\.departureTime, order: .reverse)])
+        var results = (try? modelContext.fetch(descriptor)) ?? []
         if let year = year {
             let calendar = Calendar.current
             let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1))!
             let end = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1))!
-            descriptor.predicate = #Predicate { trip in
-                if let dt = trip.departureTime {
-                    return dt >= start && dt < end
-                }
-                return false
+            results = results.filter {
+                guard let dt = $0.departureTime else { return false }
+                return dt >= start && dt < end
             }
         }
-        return (try? modelContext.fetch(descriptor)) ?? []
+        return results
     }
 
     private func fetchVisitedCountries() -> [Country] {

@@ -1,69 +1,89 @@
 import SwiftUI
 
-// Flighty-inspired dark theme with aviation aesthetics
+// MARK: - Wandr Design System — iOS 26 Liquid Glass
 enum WandrTheme {
-    // MARK: - Primary Colors
-    static let background = Color(hex: "0A0E1A")
-    static let surfacePrimary = Color(hex: "111827")
-    static let surfaceSecondary = Color(hex: "1A2332")
-    static let surfaceTertiary = Color(hex: "243044")
 
-    // MARK: - Accent Colors
-    static let accentBlue = Color(hex: "3B82F6")
-    static let accentCyan = Color(hex: "06B6D4")
-    static let accentPurple = Color(hex: "8B5CF6")
-    static let accentGreen = Color(hex: "10B981")
-    static let accentOrange = Color(hex: "F59E0B")
+    // MARK: - Accent & Brand Colors
+    static let accentTeal = Color(hex: "0EA5E9")
+    static let accentIndigo = Color(hex: "6366F1")
+    static let accentViolet = Color(hex: "8B5CF6")
+    static let accentAmber = Color(hex: "F59E0B")
+    static let accentEmerald = Color(hex: "34D399")
+    static let accentRose = Color(hex: "FB7185")
     static let accentRed = Color(hex: "EF4444")
-    static let accentPink = Color(hex: "EC4899")
+    static let accentSky = Color(hex: "38BDF8")
 
-    // MARK: - Text Colors
-    static let textPrimary = Color(hex: "F9FAFB")
-    static let textSecondary = Color(hex: "9CA3AF")
-    static let textTertiary = Color(hex: "6B7280")
-    static let textAccent = accentCyan
-
-    // MARK: - Gradients
-    static let heroGradient = LinearGradient(
-        colors: [accentBlue, accentCyan],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-
-    static let cardGradient = LinearGradient(
-        colors: [surfaceSecondary, surfaceTertiary],
-        startPoint: .top,
-        endPoint: .bottom
-    )
-
-    static let mapGradient = LinearGradient(
-        colors: [accentCyan.opacity(0.6), accentBlue.opacity(0.8)],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-
-    static let purpleGradient = LinearGradient(
-        colors: [accentPurple, accentPink],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    // MARK: - Semantic Text (adaptive for light/dark + glass readability)
+    static let textPrimary = Color.primary
+    static let textSecondary = Color.secondary
+    static let textTertiary = Color(hex: "8E8E93")
 
     // MARK: - Trip Purpose Colors
     static func purposeColor(_ purpose: TripPurpose) -> Color {
         switch purpose {
-        case .leisure: return accentCyan
-        case .business: return accentBlue
-        case .tour: return accentPurple
-        case .relocation: return accentOrange
+        case .leisure: return accentTeal
+        case .business: return accentIndigo
+        case .tour: return accentViolet
+        case .relocation: return accentAmber
         case .layover: return textTertiary
-        case .digitalNomad: return accentGreen
-        case .familyVisit: return accentPink
-        case .conference: return accentBlue
-        case .adventure: return accentOrange
+        case .digitalNomad: return accentEmerald
+        case .familyVisit: return accentRose
+        case .conference: return accentIndigo
+        case .adventure: return accentAmber
         }
     }
 
-    // MARK: - Spacing
+    // MARK: - Mesh Gradient Backgrounds
+    /// Rich ocean-to-sky gradient — the "world behind the glass"
+    static func meshBackground() -> some View {
+        MeshGradient(
+            width: 3, height: 3,
+            points: [
+                [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+                [0.0, 0.5], [0.5, 0.5], [1.0, 0.5],
+                [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
+            ],
+            colors: [
+                Color(hex: "0C1445"), Color(hex: "0F2167"), Color(hex: "1A1050"),
+                Color(hex: "062E5C"), Color(hex: "0B4F8A"), Color(hex: "1D2B6B"),
+                Color(hex: "031B35"), Color(hex: "093553"), Color(hex: "0D1B3E")
+            ]
+        )
+        .ignoresSafeArea()
+    }
+
+    /// Warm variant for Stats / Passport views
+    static func warmMeshBackground() -> some View {
+        MeshGradient(
+            width: 3, height: 3,
+            points: [
+                [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+                [0.0, 0.5], [0.5, 0.5], [1.0, 0.5],
+                [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
+            ],
+            colors: [
+                Color(hex: "1A0A2E"), Color(hex: "2D1066"), Color(hex: "1A1050"),
+                Color(hex: "16213E"), Color(hex: "1B3A5C"), Color(hex: "2A1B5E"),
+                Color(hex: "0A1628"), Color(hex: "0E2444"), Color(hex: "170D38")
+            ]
+        )
+        .ignoresSafeArea()
+    }
+
+    // MARK: - Gradients
+    static let heroGradient = LinearGradient(
+        colors: [accentTeal, accentIndigo],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let warmGradient = LinearGradient(
+        colors: [accentViolet, accentRose],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    // MARK: - Spacing (8pt grid)
     static let spacingXS: CGFloat = 4
     static let spacingSM: CGFloat = 8
     static let spacingMD: CGFloat = 16
@@ -71,13 +91,10 @@ enum WandrTheme {
     static let spacingXL: CGFloat = 32
 
     // MARK: - Corner Radius
-    static let radiusSM: CGFloat = 8
-    static let radiusMD: CGFloat = 12
-    static let radiusLG: CGFloat = 16
-    static let radiusXL: CGFloat = 24
-
-    // MARK: - Typography helpers
-    static let monoFont = "SF Mono"
+    static let radiusSM: CGFloat = 10
+    static let radiusMD: CGFloat = 14
+    static let radiusLG: CGFloat = 20
+    static let radiusXL: CGFloat = 28
 }
 
 // MARK: - Color Extension
@@ -105,32 +122,53 @@ extension Color {
     }
 }
 
-// MARK: - View Modifiers
-struct WandrCardStyle: ViewModifier {
+// MARK: - Liquid Glass View Modifiers
+struct GlassCardStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(WandrTheme.spacingMD)
-            .background(WandrTheme.surfaceSecondary)
-            .clipShape(RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
     }
 }
 
-struct WandrGlassStyle: ViewModifier {
+struct GlassCardDenseStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .padding(WandrTheme.spacingMD)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: WandrTheme.radiusMD))
+            .padding(WandrTheme.spacingSM)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: WandrTheme.radiusSM))
+    }
+}
+
+struct GlassPillStyle: ViewModifier {
+    var isActive: Bool = false
+    var activeColor: Color = WandrTheme.accentTeal
+
+    func body(content: Content) -> some View {
+        content
+            .font(.system(size: 13, weight: .semibold))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background {
+                if isActive {
+                    Capsule().fill(activeColor)
+                } else {
+                    Capsule().fill(.ultraThinMaterial)
+                }
+            }
     }
 }
 
 extension View {
-    func wandrCard() -> some View {
-        modifier(WandrCardStyle())
+    func glassCard() -> some View {
+        modifier(GlassCardStyle())
     }
 
-    func wandrGlass() -> some View {
-        modifier(WandrGlassStyle())
+    func glassCardDense() -> some View {
+        modifier(GlassCardDenseStyle())
+    }
+
+    func glassPill(isActive: Bool = false, activeColor: Color = WandrTheme.accentTeal) -> some View {
+        modifier(GlassPillStyle(isActive: isActive, activeColor: activeColor))
     }
 }
 
